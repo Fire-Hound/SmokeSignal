@@ -1,5 +1,7 @@
 pragma solidity 0.6.4;
 
+// TODO : use SafeMath
+
 // this doubles as a wrapper for the Maker medianizer contract
 abstract contract EthPriceOracle
 {
