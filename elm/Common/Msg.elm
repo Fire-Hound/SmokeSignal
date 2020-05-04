@@ -16,7 +16,6 @@ type MsgUp
     | ConnectToWeb3
     | ShowOrHideAddress PhaceIconId
     | AddUserNotice UN.UserNotice
-    | UnlockDai
     | SubmitPost Post.Draft
 
 type MsgDown

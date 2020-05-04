@@ -273,7 +273,7 @@ actionFormAndMaybeErrorEl dProfile walletUXPhaceInfo model =
 
                             Mobile ->
                                 goBackButton dProfile
-                        , inputsElement dProfile userInfo model
+                        , inputsElement dProfile model
                         , goButtonEl
                         ]
             in
@@ -301,102 +301,102 @@ actionFormAndMaybeErrorEl dProfile walletUXPhaceInfo model =
                 web3ConnectButton dProfile [ Element.centerX, Element.centerY ]
 
 
-inputsElement : EH.DisplayProfile -> UserInfo -> Model -> Element Msg
-inputsElement dProfile userInfo model =
-    Element.el
-        ([ Element.centerY ]
-            ++ (case dProfile of
-                    Desktop ->
-                        [ Element.width <| Element.px 260 ]
 
-                    Mobile ->
-                        []
-               )
-        )
-    <|
-        Element.el
-            [ Element.centerX
-            , Element.Font.size (20 |> changeForMobile 14 dProfile)
+-- inputsElement : EH.DisplayProfile -> UserInfo -> Model -> Element Msg
+-- inputsElement dProfile userInfo model =
+--     Element.el
+--         ([ Element.centerY ]
+--             ++ (case dProfile of
+--                     Desktop ->
+--                         [ Element.width <| Element.px 260 ]
+--                     Mobile ->
+--                         []
+--                )
+--         )
+--     <|
+--         Element.el
+--             [ Element.centerX
+--             , Element.Font.size (20 |> changeForMobile 14 dProfile)
+--             ]
+--         <|
+--             case model.miningUnlockTx of
+--                 Just txHash ->
+--                     Element.column
+--                         [ Element.spacing 4
+--                         , Element.Font.color (Element.rgb 0.3 0.3 0.3)
+--                         , Element.centerY
+--                         ]
+--                         [ Element.el
+--                             [ Element.centerX ]
+--                             (Element.text "Mining DAI unlock tx...")
+--                         , Element.newTabLink
+--                             [ Element.Font.color defaultTheme.linkTextColor
+--                             , Element.Font.size 14
+--                             , Element.centerX
+--                             ]
+--                             { url = EthHelpers.etherscanTxUrl txHash
+--                             , label = Element.text "(track on etherscan)"
+--                             }
+--                         , Element.el
+--                             [ Element.centerX ]
+--                             (Element.text "Feel free to draft your message")
+--                         , Element.el
+--                             [ Element.centerX ]
+--                             (Element.text "while waiting!")
+--                         ]
+--                 Nothing ->
+--                     case userInfo.daiUnlocked of
+--                         Nothing ->
+--                             loadingElement
+--                                 [ Element.centerX
+--                                 , Element.centerY
+--                                 ]
+--                             <|
+--                                 Just "Checking DAI lock..."
+--                         Just False ->
+--                             unlockButton
+--                                 dProfile
+--                                 [ Element.centerX
+--                                 , Element.centerY
+--                                 ]
+
+
+inputsElement : EH.DisplayProfile -> Model -> Element Msg
+inputsElement dProfile model =
+    Element.column
+        [ Element.spacing 10 ]
+        [ Element.row
+            [ Element.spacing (10 |> changeForMobile 5 dProfile)
+            , Element.centerX
             ]
-        <|
-            case model.miningUnlockTx of
-                Just txHash ->
-                    Element.column
-                        [ Element.spacing 4
-                        , Element.Font.color (Element.rgb 0.3 0.3 0.3)
-                        , Element.centerY
-                        ]
-                        [ Element.el
-                            [ Element.centerX ]
-                            (Element.text "Mining DAI unlock tx...")
-                        , Element.newTabLink
-                            [ Element.Font.color defaultTheme.linkTextColor
-                            , Element.Font.size 14
-                            , Element.centerX
-                            ]
-                            { url = EthHelpers.etherscanTxUrl txHash
-                            , label = Element.text "(track on etherscan)"
-                            }
-                        , Element.el
-                            [ Element.centerX ]
-                            (Element.text "Feel free to draft your message")
-                        , Element.el
-                            [ Element.centerX ]
-                            (Element.text "while waiting!")
-                        ]
-
-                Nothing ->
-                    case userInfo.daiUnlocked of
-                        Nothing ->
-                            loadingElement
-                                [ Element.centerX
-                                , Element.centerY
-                                ]
-                            <|
-                                Just "Checking DAI lock..."
-
-                        Just False ->
-                            unlockButton
-                                dProfile
-                                [ Element.centerX
-                                , Element.centerY
-                                ]
-
-                        Just True ->
-                            Element.column
-                                [ Element.spacing 10 ]
-                                [ Element.row
-                                    [ Element.spacing (10 |> changeForMobile 5 dProfile)
-                                    , Element.centerX
-                                    ]
-                                    [ Element.text "Burn"
-                                    , burnAmountInput dProfile model.daiInput
-                                    , Element.text "DAI"
-                                    ]
-                                , Element.row
-                                    [ Element.Font.size (14 |> changeForMobile 10 dProfile)
-                                    , Element.spacing 5
-                                    ]
-                                    [ Element.Input.checkbox [ Element.alignTop ]
-                                        { onChange = DonationCheckboxSet
-                                        , icon = Element.Input.defaultCheckbox
-                                        , checked = model.donateChecked
-                                        , label = Element.Input.labelHidden "Donate an extra 1% to Foundry"
-                                        }
-                                    , Element.column
-                                        [ Element.spacing 5 ]
-                                        [ Element.row []
-                                            [ Element.text "Donate an extra 1% to "
-                                            , Element.newTabLink
-                                                [ Element.Font.color defaultTheme.linkTextColor ]
-                                                { url = "https://foundrydao.com/"
-                                                , label = Element.text "Foundry"
-                                                }
-                                            ]
-                                        , Element.text "so we can build more cool stuff!"
-                                        ]
-                                    ]
-                                ]
+            [ Element.text "Burn"
+            , burnAmountInput dProfile model.daiInput
+            , Element.text "DAI"
+            ]
+        , Element.row
+            [ Element.Font.size (14 |> changeForMobile 10 dProfile)
+            , Element.spacing 5
+            ]
+            [ Element.Input.checkbox [ Element.alignTop ]
+                { onChange = DonationCheckboxSet
+                , icon = Element.Input.defaultCheckbox
+                , checked = model.donateChecked
+                , label = Element.Input.labelHidden "Donate an extra 1% to Foundry"
+                }
+            , Element.column
+                [ Element.spacing 5 ]
+                [ Element.row []
+                    [ Element.text "Donate an extra 1% to "
+                    , Element.newTabLink
+                        [ Element.Font.color defaultTheme.linkTextColor ]
+                        { url = "https://foundrydao.com/"
+                        , label = Element.text "Foundry"
+                        }
+                    ]
+                , Element.text "so we can build more cool stuff!"
+                ]
+            ]
+        ]
 
 
 inputErrorEl : DisplayProfile -> Maybe (List (Element Msg)) -> Element Msg
@@ -426,15 +426,6 @@ inputErrorEl dProfile els =
                        ]
                 )
                 (els |> Maybe.withDefault [ Element.text " " ])
-
-
-unlockButton : EH.DisplayProfile -> List (Attribute Msg) -> Element Msg
-unlockButton dProfile attrs =
-    defaultTheme.emphasizedActionButton
-        dProfile
-        attrs
-        [ "Unlock Dai" ]
-        (MsgUp UnlockDai)
 
 
 burnAmountInput : DisplayProfile -> String -> Element Msg

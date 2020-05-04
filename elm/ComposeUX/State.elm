@@ -3,7 +3,6 @@ module ComposeUX.State exposing (..)
 import Common.Msg exposing (..)
 import Common.Types exposing (..)
 import ComposeUX.Types exposing (..)
-import Contracts.Dai as Dai
 import Contracts.SmokeSignal as SSContract
 import Dict exposing (Dict)
 import Eth

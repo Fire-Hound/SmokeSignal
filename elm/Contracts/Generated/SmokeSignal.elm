@@ -1,5 +1,6 @@
 module Contracts.Generated.SmokeSignal exposing
-    ( HashBurn
+    ( ethPrice
+    , HashBurn
     , HashTip
     , MessageBurn
     , StoredMessageData
@@ -12,10 +13,10 @@ module Contracts.Generated.SmokeSignal exposing
     , hashTipEvent
     , messageBurnDecoder
     , messageBurnEvent
+    , oracle
     , storedMessageData
     , storedMessageDataDecoder
     , tipHashOrBurnIfNoAuthor
-    , token
     )
 
 import Eth.Abi.Decode as D exposing (abiDecode, andMap, data, toElmDecoder, topic)
@@ -34,23 +35,39 @@ import Json.Decode.Pipeline exposing (custom)
    Compatible with elm-ethereum v4.0.0
 
 -}
--- burnHash(bytes32,uint256,uint256) function
+-- EthPrice() function
 
 
-burnHash : Address -> Hex -> BigInt -> BigInt -> Call ()
-burnHash contractAddress hash_ burnAmount_ donateAmount_ =
+ethPrice : Address -> Call BigInt
+ethPrice contractAddress =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| E.functionCall "0d5fac77" [ (E.staticBytes 32) hash_, E.uint burnAmount_, E.uint donateAmount_ ]
+    , data = Just <| E.functionCall "2cc812bc" []
+    , nonce = Nothing
+    , decoder = toElmDecoder D.uint
+    }
+
+
+-- burnHash(bytes32,uint256) function
+
+
+burnHash : Address -> Hex -> BigInt -> Call ()
+burnHash contractAddress hash_ donateAmount_ =
+    { to = Just contractAddress
+    , from = Nothing
+    , gas = Nothing
+    , gasPrice = Nothing
+    , value = Nothing
+    , data = Just <| E.functionCall "dd35b7ce" [ (E.staticBytes 32) hash_, E.uint donateAmount_ ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
 
 
--- burnMessage(string,uint256,uint256) function
+-- burnMessage(string,uint256) function
 
 
 burnMessage : Address -> String -> BigInt -> BigInt -> Call Hex
@@ -59,8 +76,8 @@ burnMessage contractAddress message_ burnAmount_ donateAmount_ =
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
-    , value = Nothing
-    , data = Just <| E.functionCall "1028553d" [ E.string message_, E.uint burnAmount_, E.uint donateAmount_ ]
+    , value = Just burnAmount_
+    , data = Just <| E.functionCall "131d0b57" [ E.string message_, E.uint donateAmount_ ]
     , nonce = Nothing
     , decoder = toElmDecoder (D.staticBytes 32)
     }
@@ -82,13 +99,31 @@ donationAddress contractAddress =
     }
 
 
+-- oracle() function
+
+
+oracle : Address -> Call Address
+oracle contractAddress =
+    { to = Just contractAddress
+    , from = Nothing
+    , gas = Nothing
+    , gasPrice = Nothing
+    , value = Nothing
+    , data = Just <| E.functionCall "7dc0d1d0" []
+    , nonce = Nothing
+    , decoder = toElmDecoder D.address
+    }
+
+
 -- storedMessageData(bytes32) function
 
 
 type alias StoredMessageData =
     { firstAuthor : Address
-    , totalBurned : BigInt
-    , totalTipped : BigInt
+    , nativeBurned : BigInt
+    , dollarsBurned : BigInt
+    , nativeTipped : BigInt
+    , dollarsTipped : BigInt
     }
 
 
@@ -111,38 +146,24 @@ storedMessageDataDecoder =
         |> andMap D.address
         |> andMap D.uint
         |> andMap D.uint
+        |> andMap D.uint
+        |> andMap D.uint
         |> toElmDecoder
 
 
--- tipHashOrBurnIfNoAuthor(bytes32,uint256,uint256) function
+-- tipHashOrBurnIfNoAuthor(bytes32,uint256) function
 
 
-tipHashOrBurnIfNoAuthor : Address -> Hex -> BigInt -> BigInt -> Call ()
-tipHashOrBurnIfNoAuthor contractAddress hash_ amount_ donateAmount_ =
+tipHashOrBurnIfNoAuthor : Address -> Hex -> BigInt -> Call ()
+tipHashOrBurnIfNoAuthor contractAddress hash_ donateAmount_ =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| E.functionCall "dbd9deba" [ (E.staticBytes 32) hash_, E.uint amount_, E.uint donateAmount_ ]
+    , data = Just <| E.functionCall "c3d0c8e3" [ (E.staticBytes 32) hash_, E.uint donateAmount_ ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
-    }
-
-
--- token() function
-
-
-token : Address -> Call Address
-token contractAddress =
-    { to = Just contractAddress
-    , from = Nothing
-    , gas = Nothing
-    , gasPrice = Nothing
-    , value = Nothing
-    , data = Just <| E.functionCall "fc0c546a" []
-    , nonce = Nothing
-    , decoder = toElmDecoder D.address
     }
 
 

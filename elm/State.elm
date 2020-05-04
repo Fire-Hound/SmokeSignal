@@ -8,7 +8,6 @@ import Common.Types exposing (..)
 import ComposeUX.State as ComposeUX
 import ComposeUX.Types as ComposeUX
 import Config
-import Contracts.Dai as Dai
 import Contracts.SmokeSignal as SSContract
 import DemoPhaceSrcMutator exposing (mutateInfoGenerator)
 import Dict exposing (Dict)
@@ -142,7 +141,7 @@ update msg prevModel =
             , Wallet.userInfo prevModel.wallet
                 |> Maybe.map
                     (\userInfo ->
-                        fetchDaiBalanceAndAllowanceCmd userInfo.address
+                        fetchBalanceCmd userInfo.address
                     )
                 |> Maybe.withDefault Cmd.none
             )
@@ -213,7 +212,7 @@ update msg prevModel =
                                                 newAddress
                                                 Nothing
                                                 Nothing
-                                        , fetchDaiBalanceAndAllowanceCmd newAddress
+                                        , fetchBalanceCmd newAddress
                                         )
 
                                 Nothing ->
@@ -566,27 +565,24 @@ handleMsgUp msgUp prevModel =
             , Cmd.none
             )
 
-        UnlockDai ->
-            let
-                txParams =
-                    Dai.unlockDaiCall
-                        |> Eth.toSend
-
-                listeners =
-                    { onMined = Nothing
-                    , onSign = Just <| TxSigned UnlockTx
-                    , onBroadcast = Nothing
-                    }
-
-                ( txSentry, cmd ) =
-                    TxSentry.customSend prevModel.txSentry listeners txParams
-            in
-            ( { prevModel
-                | txSentry = txSentry
-              }
-            , cmd
-            )
-
+        -- UnlockDai ->
+        --     let
+        --         txParams =
+        --             Dai.unlockDaiCall
+        --                 |> Eth.toSend
+        --         listeners =
+        --             { onMined = Nothing
+        --             , onSign = Just <| TxSigned UnlockTx
+        --             , onBroadcast = Nothing
+        --             }
+        --         ( txSentry, cmd ) =
+        --             TxSentry.customSend prevModel.txSentry listeners txParams
+        --     in
+        --     ( { prevModel
+        --         | txSentry = txSentry
+        --       }
+        --     , cmd
+        --     )
         SubmitPost postDraft ->
             let
                 txParams =
@@ -864,12 +860,11 @@ fetchPostsFromBlockrangeCmd from to sentry =
             Nothing
 
 
-fetchDaiBalanceAndAllowanceCmd : Address -> Cmd Msg
-fetchDaiBalanceAndAllowanceCmd address =
-    Cmd.batch
-        [ Dai.getAllowanceCmd address (AllowanceFetched address)
-        , Dai.getBalanceCmd address (BalanceFetched address)
-        ]
+fetchBalanceCmd : Address -> Cmd Msg
+fetchBalanceCmd address =
+    Eth.getBalance Config.httpProviderUrl address
+        |> Task.map TokenValue.tokenValue
+        |> Task.attempt (BalanceFetched address)
 
 
 getBlockTimeCmd : Int -> Cmd Msg
