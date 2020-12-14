@@ -24,6 +24,7 @@ import PostUX.Preview as PostPreview
 import PostUX.Types as PostUX
 import Routing exposing (Route)
 import Theme exposing (darkTheme, defaultTheme)
+import Time exposing (now)
 import TokenValue exposing (TokenValue)
 import Wallet exposing (Wallet)
 
@@ -38,7 +39,8 @@ view :
 view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
     let
         listOfPosts =
-            List.concat <| Dict.values posts
+            List.concat <|
+                Dict.values posts
 
         maybeShowAddressForId =
             case showAddressId of
@@ -47,6 +49,9 @@ view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
 
                 _ ->
                     Nothing
+
+        maxBlockId =
+            List.maximum <| Dict.keys posts
     in
     Element.el
         [ Element.width Element.fill
@@ -85,6 +90,7 @@ view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
                                 dProfile
                                 donateChecked
                                 maybeShowAddressForId
+                                maxBlockId
                                 listOfPosts
                             ]
                         ]
@@ -129,12 +135,16 @@ postFeed :
     DisplayProfile
     -> Bool
     -> Maybe Post.Id
+    -> Maybe Int
     -> List Post.Published
     -> Element Msg
-postFeed dProfile donateChecked maybeShowAddressForId listOfPosts =
+postFeed dProfile donateChecked maybeShowAddressForId maybeMaxBlockId listOfPosts =
     let
+        maxBlockId =
+            Maybe.withDefault 1 maybeMaxBlockId
+
         posts =
-            List.sortBy (\post -> toFloat post.id.block * TokenValue.toFloatWithWarning post.core.authorBurn / pi)
+            List.sortBy (\post -> TokenValue.toFloatWithWarning post.core.authorBurn / toFloat (maxBlockId - post.id.block))
                 listOfPosts
                 |> List.reverse
     in
