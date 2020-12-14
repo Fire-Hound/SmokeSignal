@@ -34,7 +34,7 @@ import Post exposing (Post)
 import PostUX.Types as PostUX
 import PostUX.View as PostUX
 import Routing exposing (Route)
-import Theme exposing (defaultTheme)
+import Theme exposing (theme)
 import Time
 import TokenValue exposing (TokenValue)
 import Tuple3
@@ -101,7 +101,7 @@ modals model =
            in
            if showDraftInProgressButton then
             Just <|
-                defaultTheme.secondaryActionButton
+                theme.secondaryActionButton
                     model.dProfile
                     [ Element.alignBottom
                     , Element.alignLeft
@@ -143,7 +143,7 @@ body model =
     in
     Element.column
         [ Element.width Element.fill
-        , Element.Background.color defaultTheme.appBackground
+        , Element.Background.color theme.appBackground
         , Element.height Element.fill
         ]
         [ case model.mode of
@@ -152,19 +152,15 @@ body model =
 
             Home homeModel ->
                 Element.map HomeMsg <|
-                    -- Element.Lazy.lazy
-                    --     (Home.View.view
-                    --         model.dProfile
-                    --         model.showAddressId
-                    --         walletUXPhaceInfo
-                    --         model.donateChecked
-                    --     )
-                    --     model.publishedPosts
-                    Home.View.view
-                        model.dProfile
-                        model.showAddressId
-                        walletUXPhaceInfo
-                        model.donateChecked
+                    Element.Lazy.lazy
+                        (Home.View.view
+                            model.dProfile
+                            model.donateChecked
+                            model.blockTimes
+                            model.now
+                            model.showAddressId
+                            walletUXPhaceInfo
+                        )
                         model.publishedPosts
 
             Compose ->
@@ -205,7 +201,7 @@ body model =
 
                             Nothing ->
                                 appStatusMessage
-                                    defaultTheme.appStatusTextColor
+                                    theme.appStatusTextColor
                                     "Loading post..."
 
                     Post.TopLevel topic ->
@@ -236,7 +232,7 @@ header : EH.DisplayProfile -> Mode -> WalletUXPhaceInfo -> List TrackedTx -> Boo
 header dProfile mode walletUXPhaceInfo trackedTxs showExpandedTrackedTxs =
     Element.row
         [ Element.width Element.fill
-        , Element.Background.color defaultTheme.headerBackground
+        , Element.Background.color theme.headerBackground
         , Element.padding (20 |> changeForMobile 10 dProfile)
         , Element.spacing (10 |> changeForMobile 5 dProfile)
         , Element.Border.glow
@@ -438,7 +434,7 @@ viewTrackedTxRow trackedTx =
         etherscanLink label =
             Element.newTabLink
                 [ Element.Font.italic
-                , Element.Font.color defaultTheme.linkTextColor
+                , Element.Font.color theme.linkTextColor
                 ]
                 { url = EthHelpers.etherscanTxUrl trackedTx.txHash
                 , label = Element.text label
@@ -454,7 +450,7 @@ viewTrackedTxRow trackedTx =
                         []
                         [ Element.text "Tip "
                         , Element.el
-                            [ Element.Font.color defaultTheme.linkTextColor
+                            [ Element.Font.color theme.linkTextColor
                             , Element.pointer
                             , Element.Events.onClick <|
                                 MsgUp <|
@@ -470,7 +466,7 @@ viewTrackedTxRow trackedTx =
                         []
                         [ Element.text "Burn for "
                         , Element.el
-                            [ Element.Font.color defaultTheme.linkTextColor
+                            [ Element.Font.color theme.linkTextColor
                             , Element.pointer
                             , Element.Events.onClick <|
                                 MsgUp <|
@@ -490,7 +486,7 @@ viewTrackedTxRow trackedTx =
                         ]
                         [ Element.text "Post"
                         , Element.el
-                            [ Element.Font.color defaultTheme.linkTextColor
+                            [ Element.Font.color theme.linkTextColor
                             , Element.pointer
                             , Element.Events.onClick <| ViewDraft <| Just draft
                             ]
@@ -513,7 +509,7 @@ viewTrackedTxRow trackedTx =
                             case maybePostId of
                                 Just postId ->
                                     Element.el
-                                        [ Element.Font.color defaultTheme.linkTextColor
+                                        [ Element.Font.color theme.linkTextColor
                                         , Element.pointer
                                         , Element.Events.onClick <| MsgUp <| GotoRoute <| Routing.ViewContext <| Post.Reply postId
                                         ]
@@ -689,7 +685,7 @@ viewPostHeader dProfile publishedPost =
                 Mobile ->
                     Element.none
             , Element.newTabLink
-                [ Element.Font.color defaultTheme.linkTextColorAgainstBackground ]
+                [ Element.Font.color theme.linkTextColorAgainstBackground ]
                 { url = EthHelpers.etherscanTxUrl publishedPost.txHash
                 , label = Element.text "View on etherscan"
                 }
@@ -756,7 +752,7 @@ viewPostAndReplies dProfile donateChecked wallet allPosts blockTimes replies pub
                 [ Element.el
                     [ Element.Font.size (responsiveVal dProfile 50 30)
                     , Element.Font.bold
-                    , Element.Font.color defaultTheme.mainTextColor
+                    , Element.Font.color theme.defaultTextColor
                     ]
                   <|
                     Element.text "Replies"
@@ -791,7 +787,7 @@ viewPostsForTopic dProfile donateChecked wallet allPosts blockTimes replies uxMo
         , Element.spacing 40
         ]
         [ if Dict.isEmpty filteredPosts then
-            appStatusMessage defaultTheme.appStatusTextColor <| "Haven't yet found any posts for this topic..."
+            appStatusMessage theme.appStatusTextColor <| "Haven't yet found any posts for this topic..."
 
           else
             Element.Lazy.lazy5
@@ -822,7 +818,7 @@ viewTopicHeader dProfile maybeUserInfo topic =
             ]
         , case maybeUserInfo of
             Just userInfo ->
-                defaultTheme.secondaryActionButton
+                theme.secondaryActionButton
                     dProfile
                     []
                     [ "Post in Topic" ]
@@ -833,7 +829,7 @@ viewTopicHeader dProfile maybeUserInfo topic =
                     )
 
             Nothing ->
-                defaultTheme.emphasizedActionButton
+                theme.emphasizedActionButton
                     dProfile
                     [ Element.paddingXY 30 10 ]
                     [ "Activate Wallet to Post" ]
@@ -865,7 +861,7 @@ viewBlocknumAndPosts dProfile donateChecked wallet showContext blockTimes replie
             , Element.spacing 5
             , Element.Font.italic
             , Element.Font.size 14
-            , Element.Font.color defaultTheme.mainTextColor
+            , Element.Font.color theme.defaultTextColor
             ]
             [ Element.row
                 [ Element.width Element.fill
@@ -875,7 +871,7 @@ viewBlocknumAndPosts dProfile donateChecked wallet showContext blockTimes replie
                 , Element.el
                     [ Element.width Element.fill
                     , Element.height <| Element.px 1
-                    , Element.Border.color defaultTheme.mainTextColor
+                    , Element.Border.color theme.defaultTextColor
                     , Element.Border.widthEach
                         { top = 1
                         , bottom = 0
@@ -951,7 +947,7 @@ viewNumRepliesIfNonzero postId numReplies =
 
     else
         Element.el
-            [ Element.Font.color defaultTheme.linkTextColorAgainstBackground
+            [ Element.Font.color theme.linkTextColorAgainstBackground
             , Element.pointer
             , Element.Events.onClick <|
                 MsgUp <|
@@ -1015,7 +1011,7 @@ maybeViewDraftModal model =
                     , Element.Border.rounded 10
                     , EH.onClickNoPropagation <| MsgUp NoOp
                     , Element.padding (responsiveVal model.dProfile 20 10)
-                    , Element.Background.color defaultTheme.draftModalBackground
+                    , Element.Background.color theme.draftModalBackground
                     , Element.Border.glow
                         (Element.rgba 0 0 0 0.3)
                         10
@@ -1032,7 +1028,7 @@ maybeViewDraftModal model =
                                     (Element.padding 20)
                                 ]
                               <|
-                                defaultTheme.secondaryActionButton
+                                theme.secondaryActionButton
                                     model.dProfile
                                     [ Element.Border.glow
                                         (Element.rgba 0 0 0 0.4)

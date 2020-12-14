@@ -23,20 +23,22 @@ import Post exposing (Post)
 import PostUX.Preview as PostPreview
 import PostUX.Types as PostUX
 import Routing exposing (Route)
-import Theme exposing (darkTheme, defaultTheme)
-import Time exposing (now)
+import Theme exposing (theme)
+import Time
 import TokenValue exposing (TokenValue)
 import Wallet exposing (Wallet)
 
 
 view :
     EH.DisplayProfile
+    -> Bool
+    -> Dict Int Time.Posix
+    -> Time.Posix
     -> Maybe PhaceIconId
     -> WalletUXPhaceInfo
-    -> Bool
     -> PublishedPostsDict
     -> Element Msg
-view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
+view dProfile donateChecked blockTimes now showAddressId walletUXPhaceInfo posts =
     let
         listOfPosts =
             List.concat <|
@@ -49,18 +51,15 @@ view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
 
                 _ ->
                     Nothing
-
-        maxBlockId =
-            List.maximum <| Dict.keys posts
     in
     Element.el
         [ Element.width Element.fill
         , Element.height Element.fill
-        , Element.Background.color darkTheme.appBackground
+        , Element.Background.color theme.appBackground
         , responsiveVal dProfile
             (Element.paddingXY 40 40)
             (Element.paddingXY 10 20)
-        , Element.Font.color darkTheme.emphasizedTextColor
+        , Element.Font.color theme.emphasizedTextColor
         ]
     <|
         Element.column
@@ -72,11 +71,8 @@ view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
             case dProfile of
                 Desktop ->
                     [ boldProclamationEl dProfile
-                    , tutorialVideo dProfile
-                    , conversationAlreadyStartedEl dProfile
                     , Element.row
                         [ Element.width Element.fill
-                        , Element.height Element.fill
                         , Element.spacing 40
                         , Element.clip
                         , Element.htmlAttribute (Html.Attributes.style "flex-shrink" "1")
@@ -84,13 +80,15 @@ view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
                         [ Element.column
                             [ Element.width Element.fill
                             , Element.height Element.fill
+                            , Element.clip
                             ]
                           <|
                             [ postFeed
                                 dProfile
                                 donateChecked
+                                blockTimes
+                                now
                                 maybeShowAddressForId
-                                maxBlockId
                                 listOfPosts
                             ]
                         ]
@@ -112,7 +110,7 @@ view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
                                 [ Element.width Element.fill
                                 , Element.spacing 10
                                 ]
-                                [ defaultTheme.greenActionButton
+                                [ theme.greenActionButton
                                     dProfile
                                     [ Element.width Element.fill ]
                                     [ "Create a New Post" ]
@@ -134,23 +132,21 @@ view dProfile showAddressId walletUXPhaceInfo donateChecked posts =
 postFeed :
     DisplayProfile
     -> Bool
+    -> Dict Int Time.Posix
+    -> Time.Posix
     -> Maybe Post.Id
-    -> Maybe Int
     -> List Post.Published
     -> Element Msg
-postFeed dProfile donateChecked maybeShowAddressForId maybeMaxBlockId listOfPosts =
+postFeed dProfile donateChecked blockTimes now maybeShowAddressForId listOfPosts =
     let
-        maxBlockId =
-            Maybe.withDefault 1 maybeMaxBlockId
-
         posts =
-            List.sortBy (\post -> TokenValue.toFloatWithWarning post.core.authorBurn / toFloat (maxBlockId - post.id.block))
+            List.sortBy (\post -> TokenValue.toFloatWithWarning post.core.authorBurn / toFloat post.id.block)
                 listOfPosts
                 |> List.reverse
+                |> List.take 20
     in
     Element.column
         [ Element.width Element.fill
-        , Element.height Element.fill
         , Element.spacingXY 0 20
         , Element.paddingXY 0 20
         ]
@@ -159,6 +155,8 @@ postFeed dProfile donateChecked maybeShowAddressForId maybeMaxBlockId listOfPost
             (previewPost
                 dProfile
                 donateChecked
+                blockTimes
+                now
                 maybeShowAddressForId
                 Nothing
             )
@@ -168,16 +166,20 @@ postFeed dProfile donateChecked maybeShowAddressForId maybeMaxBlockId listOfPost
 previewPost :
     DisplayProfile
     -> Bool
+    -> Dict Int Time.Posix
+    -> Time.Posix
     -> Maybe Post.Id
     -> Maybe PostUX.Model
     -> Post.Published
     -> Element Msg
-previewPost dProfile donateChecked maybeShowAddressForId maybePostUXModel post =
+previewPost dProfile donateChecked blockTimes now maybeShowAddressForId maybePostUXModel post =
     Element.map PostUXMsg <|
         PostPreview.view
             dProfile
             donateChecked
             (maybeShowAddressForId == Just post.id)
+            blockTimes
+            now
             maybePostUXModel
             post
 
@@ -209,13 +211,6 @@ boldProclamationEl dProfile =
             ]
           <|
             Element.text "Uncensorable - Immutable - Unkillable"
-        , Element.el
-            [ Element.Font.size (responsiveVal dProfile 45 15)
-            , Element.centerX
-            , Element.Font.color Theme.almostWhite
-            ]
-          <|
-            Element.text "Real Free Speech - Cemented on the Blockchain"
         ]
 
 
@@ -287,7 +282,7 @@ infoBlock dProfile =
         , Element.padding (responsiveVal dProfile 25 15)
         , Element.Font.color <| EH.white
         , Element.Font.size (responsiveVal dProfile 22 18)
-        , Element.Font.color darkTheme.mainTextColor
+        , Element.Font.color theme.defaultTextColor
         , Element.centerX
         , Element.spacing 20
         , Element.width Element.fill
@@ -312,13 +307,13 @@ infoBlock dProfile =
             , [ Element.text "All you need is ETH for gas and DAI to burn." ]
             , [ Element.text "All SmokeSignal posts are permanent and impossible to delete, and can be accessed with any browser via an IPFS Gateway ("
               , Element.newTabLink
-                    [ Element.Font.color defaultTheme.linkTextColor ]
+                    [ Element.Font.color theme.linkTextColor ]
                     { url = "https://gateway.ipfs.io/ipfs/QmeXhVyRJYhtpRcQr4uYsJZi6wBYqyEwdjPRjp3EFCtLHQ/#/context/re?block=9956062&hash=0x0a7e09be33cd207ad208f057e26fba8f8343cfd6c536904c20dbbdf87aa2b257"
                     , label = Element.text "example"
                     }
               , Element.text ") or the smokesignal.eth.link mirror ("
               , Element.newTabLink
-                    [ Element.Font.color defaultTheme.linkTextColor ]
+                    [ Element.Font.color theme.linkTextColor ]
                     { url = "https://smokesignal.eth.link/#/context/re?block=9956062&hash=0x0a7e09be33cd207ad208f057e26fba8f8343cfd6c536904c20dbbdf87aa2b257"
                     , label = Element.text "example"
                     }
@@ -326,13 +321,13 @@ infoBlock dProfile =
               ]
             , [ Element.text "If the above two methods prove unreliable, some browsers also support direct smokesignal.eth links ("
               , Element.newTabLink
-                    [ Element.Font.color defaultTheme.linkTextColor ]
+                    [ Element.Font.color theme.linkTextColor ]
                     { url = "https://smokesignal.eth/#/context/re?block=9956062&hash=0x0a7e09be33cd207ad208f057e26fba8f8343cfd6c536904c20dbbdf87aa2b257"
                     , label = Element.text "example"
                     }
               , Element.text ") or direct IPFS links ("
               , Element.newTabLink
-                    [ Element.Font.color defaultTheme.linkTextColor ]
+                    [ Element.Font.color theme.linkTextColor ]
                     { url = "ipfs://QmeXhVyRJYhtpRcQr4uYsJZi6wBYqyEwdjPRjp3EFCtLHQ/#/context/re?block=9956062&hash=0x0a7e09be33cd207ad208f057e26fba8f8343cfd6c536904c20dbbdf87aa2b257"
                     , label = Element.text "example"
                     }
@@ -358,7 +353,7 @@ topicsExplainerEl dProfile =
         , Element.padding (responsiveVal dProfile 25 15)
         , Element.Font.color <| EH.white
         , Element.Font.size (responsiveVal dProfile 22 18)
-        , Element.Font.color darkTheme.mainTextColor
+        , Element.Font.color theme.defaultTextColor
         , Element.centerX
         , Element.width Element.fill
         , Element.spacing 20
@@ -397,7 +392,7 @@ composeActionBlock dProfile walletUXPhaceInfo =
                     (Element.paragraph
                         [ Element.Font.size (responsiveVal dProfile 22 18)
                         , Element.width Element.fill
-                        , Element.Font.color darkTheme.mainTextColor
+                        , Element.Font.color theme.defaultTextColor
                         ]
                     )
                     paras
@@ -464,7 +459,7 @@ composeActionBlock dProfile walletUXPhaceInfo =
                     , Element.spacing 10
                     ]
                     [ moreInfoButton dProfile
-                    , defaultTheme.greenActionButton
+                    , theme.greenActionButton
                         dProfile
                         [ Element.width Element.fill ]
                         [ "Create a New Post" ]
@@ -479,7 +474,7 @@ composeActionBlock dProfile walletUXPhaceInfo =
 
 moreInfoButton : DisplayProfile -> Element Msg
 moreInfoButton dProfile =
-    defaultTheme.secondaryActionButton
+    theme.secondaryActionButton
         dProfile
         [ Element.width Element.fill ]
         [ "What Can SmokeSignal be Used For?" ]
@@ -506,6 +501,7 @@ homeWalletUX dProfile walletUXPhaceInfo =
                     ]
                 <|
                     phaceElement
+                        ( 100, 100 )
                         True
                         (Eth.Utils.unsafeToAddress demoAddress)
                         False
@@ -521,6 +517,7 @@ homeWalletUX dProfile walletUXPhaceInfo =
                     ]
                 <|
                     phaceElement
+                        ( 100, 100 )
                         True
                         accountInfo.address
                         showAddress
