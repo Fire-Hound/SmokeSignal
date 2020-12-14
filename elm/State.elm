@@ -40,6 +40,7 @@ import Types exposing (..)
 import Url exposing (Url)
 import UserNotice as UN exposing (UserNotice)
 import Wallet
+import Eth.Utils
 
 
 init : Flags -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
@@ -110,6 +111,38 @@ init flags url key =
                     , routeCmd
                     ]
             )
+        |> (\(model, cmd) ->
+            model
+                |> addPost
+                    100
+                    (Post.Published
+                        (Eth.Utils.unsafeToTxHash "0x0000")
+                        {block = 100
+                        , messageHash = Eth.Utils.unsafeToHex "0x0000"
+                        }
+                        (Post.Core
+                            (Eth.Utils.unsafeToAddress "0xBB5eb03535FA2bCFe9FE3BBb0F9cC48385818d92")
+                            (TokenValue.fromIntTokenValue 10)
+                            (Post.Content
+                                (Just "test title")
+                                Nothing
+                                "test body for url"
+                            )
+                            { metadataVersion = 3
+                            , context = Post.Url "google.com"
+                            , maybeDecodeError = Nothing
+                            }
+                            (Common.View.renderContentOrError
+                                (Post.Content
+                                    (Just "test title")
+                                    Nothing
+                                    "test body for url"
+                                )
+                            )
+                        )
+                        Nothing
+                    )
+        )
 
 
 initDemoPhaceSrc : String
@@ -990,9 +1023,10 @@ addPost blockNumber publishedPost prevModel =
                             []
                     )
           }
-        , SSContract.getAccountingCmd
-            publishedPost.id.messageHash
-            (PostAccountingFetched publishedPost.id)
+        -- , SSContract.getAccountingCmd
+        --     publishedPost.id.messageHash
+        --     (PostAccountingFetched publishedPost.id)
+        , Cmd.none
         )
 
 

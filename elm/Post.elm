@@ -80,6 +80,7 @@ type alias Metadata =
 type Context
     = Reply Id
     | TopLevel String
+    | Url String
 
 
 getCore : Post -> Core
